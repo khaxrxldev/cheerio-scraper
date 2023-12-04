@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+      $(function () {
+        let filterData = {
+          'filterStartPrice': '',
+          'filterEndPrice': '',
+          'filterSeason': '',
+          'filterDuration': ''
+        };
+        
+        onGetData(filterData);
+      });
+
+      function onGetData(filterData) {
+        $.ajax({
+          type: 'GET',
+          url: 'http://localhost:5000/umrah'
+        }).then(function(dataList) {
+          $('#packageId').empty();
+
+          for (const data of dataList.result) {
+            for (const season of data.seasons) {
+              for (const room of season.rooms) {
+                let status = true;
+
+                if (filterData.filterSeason && filterData.filterSeason !== season.name) {
+                  status = false;
+                }
+                if (filterData.filterDuration && filterData.filterDuration !== data.duration) {
+                  status = false;
+                }
+                if (filterData.filterStartPrice && room.room_price < filterData.filterStartPrice) {
+                  status = false;
+                }
+                if (filterData.filterEndPrice && room.room_price > filterData.filterEndPrice) {
+                  status = false;
+                }
+
+                if (status) {
+                  $('#packageId').append($('<div>')
+                    .html(data.name +' '+ data.duration +' '+ season.name +' '+ room.room_name +' '+ room.room_price)
+                  );
+                }
+              }
+            }
+          }
+        });
+      }
+    </script>
+    <title>Document</title>
+  </head>
+  <body id="bodyId">
+    <form id="filterForm" method="post">
+      <input type="number" id="filterStartPrice">
+      <input type="number" id="filterEndPrice">
+      <select id="filterSeason">
+        <option value=""></option>
+        <option value="Semi Peak">Semi Peak</option>
+        <option value="Musim Puncak">Musim Puncak</option>
+      </select>
+      <select id="filterDuration">
+        <option value=""></option>
+        <option value="12 Hari 10 Malam">12 Hari 10 Malam</option>
+        <option value="11 HARI 10 MALAM">11 HARI 10 MALAM</option>
+      </select>
+      <button type="submit">Filter</button>
+    </form>
+    <div id="packageId"></div>
+    <script>
+      $('#filterForm').submit(function(event) {
+			  event.preventDefault();
+        let filterData = {
+          'filterStartPrice': $('#filterStartPrice').val(),
+          'filterEndPrice': $('#filterEndPrice').val(),
+          'filterSeason': $('#filterSeason').val(),
+          'filterDuration': $('#filterDuration').val()
+        };
+        
+        onGetData(filterData);
+      });
+    </script>
+  </body>
+</html>
