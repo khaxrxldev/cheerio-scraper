@@ -1,11 +1,13 @@
 const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const cors = require('cors');
 const app = express();
 
+app.use(cors());
 const PORT = 5000;
 
-async function first() {
+async function scrapeFirstSource() {
   const URLs = [
     "https://maghfirahtravel.com.my/pakej-umrah/umrah-fairmont-lite/",
     "https://maghfirahtravel.com.my/pakej-umrah/umrah-rahmah-ekonomi/",
@@ -43,7 +45,7 @@ async function first() {
         if (index % 2 !== 0) {
           let room = {};
           room['room_name'] = roomData[index - 1];
-          room['room_price'] = roomData[index];
+          room['room_price'] = +(roomData[index].replace('RM ', ''));
           rooms.push(room);
         }
       }
@@ -84,7 +86,7 @@ async function first() {
   return umrahPackages;
 }
 
-async function second() {
+async function scrapeSecondSource() {
   const URLs = [
     "https://azzuhatravel.com/umrah-safwah/",
     "https://azzuhatravel.com/umrah-rotana/",
@@ -177,7 +179,7 @@ async function second() {
                 if (indexTR == 0 && indexTD == (+tableData['priceIndex']) - 1) {
                   let room = {
                     "room_name": tableData['roomName'],
-                    "room_price": $(elementTD).text()
+                    "room_price": +($(elementTD).text().replace('RM', '').replace(',', ''))
                   }
 
                   rooms.push(room)
@@ -186,7 +188,7 @@ async function second() {
                 if (indexTR > 0 && indexTD == (+tableData['priceIndex']) - 2) {
                   let room = {
                     "room_name": tableData['roomName'],
-                    "room_price": $(elementTD).text()
+                    "room_price": +($(elementTD).text().replace('RM', '').replace(',', ''))
                   }
 
                   rooms.push(room)
@@ -208,7 +210,7 @@ async function second() {
   return umrahPackages;
 }
 
-async function third() {
+async function scrapeThirdSource() {
   let umrahPackages = [];
   let URL = 'https://feldatravel.com.my/pakej-umrah/';
 
@@ -257,11 +259,11 @@ async function third() {
         if (index % 2 !== 0) {
           normalSeasonRooms.push({
             'room_name': roomDataList[index - 1],
-            'room_price': roomDataList[index].replace(',', '')
+            'room_price': +(roomDataList[index].replace('RM ', '').replace(',', ''))
           });
           schoolHolidayRooms.push({
             'room_name': roomDataList[index - 1],
-            'room_price': 'RM ' + (+(roomDataList[index].replace('RM ', '').replace(',', '')) + 1000).toString()
+            'room_price': +(roomDataList[index].replace('RM ', '').replace(',', '')) + 1000
           });
         }
       }
@@ -293,9 +295,23 @@ async function third() {
 
 app.get("/umrah", async (req, res) => {
   try {
-    const scrapeResult = await third();
-      return res.status(200).json({
-      result: scrapeResult,
+    const firstSourceResults = await scrapeFirstSource();
+    const secondSourceResults = await scrapeSecondSource();
+    const thirdSourceResults = await scrapeThirdSource();
+    
+    let scrapeResults = [];
+    for (const firstSourceResult of firstSourceResults) {
+      scrapeResults.push(firstSourceResult);
+    }
+    for (const secondSourceResult of secondSourceResults) {
+      scrapeResults.push(secondSourceResult);
+    }
+    for (const thirdSourceResult of thirdSourceResults) {
+      scrapeResults.push(thirdSourceResult);
+    }
+
+    return res.status(200).json({
+      result: scrapeResults,
     });
   } catch (err) {
     return res.status(500).json({
