@@ -73,8 +73,8 @@ async function scrapeFirstSource() {
       let umrahPackage = {
         "name": packageName,
         "url": URL,
-        "makkahHotel": "Hotel " + makkahHotel,
-        "madinahHotel": "Hotel " + madinahHotel,
+        "makkahHotel": titleCase("Hotel " + makkahHotel),
+        "madinahHotel": titleCase("Hotel " + madinahHotel),
         "duration": duration,
         "seasons": packages
       }
@@ -109,7 +109,7 @@ async function scrapeSecondSource() {
       });
 
       let umrahPackage = {
-        "name": packageName.trim(),
+        "name": titleCase(packageName.trim()),
         "url": URL,
         "makkahHotel": "",
         "madinahHotel": "",
@@ -122,16 +122,16 @@ async function scrapeSecondSource() {
 
       for (let index = 0; index < h3Texts.length; index++) {
         if (h3Texts[index] === 'Hotel Makkah') {
-          umrahPackage['makkahHotel'] = 'HOTEL ' + h3Texts[index + 1];
+          umrahPackage['makkahHotel'] = titleCase('HOTEL ' + h3Texts[index + 1]);
         }
         if (h3Texts[index] === 'Hotel Madinah') {
-          umrahPackage['madinahHotel'] = 'HOTEL ' + h3Texts[index + 1];
+          umrahPackage['madinahHotel'] = titleCase('HOTEL ' + h3Texts[index + 1]);
         }
       }
 
       $(packageNameContainer[6]).find('h4').each((indexRoom, elementRoom) => {
         if ($(elementRoom).text().includes('HARI') && $(elementRoom).text().includes('MALAM')) {
-          umrahPackage['duration'] = $(elementRoom).text().match(/\d.*/)[0];
+          umrahPackage['duration'] = titleCase($(elementRoom).text().match(/\d.*/)[0]);
         }
       });
 
@@ -151,9 +151,24 @@ async function scrapeSecondSource() {
         $(elementTable).find("thead > tr > th").each((indexThead, elementThead) => {
           if (!$(elementThead).attr('rowspan')) {
             if (addRoomStatus) {
+              let translatedRoomName = '';
+              switch ($(elementThead).text()) {
+                case 'QUINT':
+                  translatedRoomName = 'lima';
+                  break;
+                case 'QUAD':
+                  translatedRoomName = 'empat';
+                  break;
+                case 'TRIPLE':
+                  translatedRoomName = 'tiga';
+                  break;
+                case 'DOUBLE':
+                  translatedRoomName = 'dua';
+                  break;
+              }
               let tableData = {
                 'priceIndex': indexThead,
-                'roomName': $(elementThead).text()
+                'roomName': 'Bilik Ber' + translatedRoomName
               }
 
               tableDataList.push(tableData);
@@ -172,7 +187,23 @@ async function scrapeSecondSource() {
 
           $(elementTR).find("td").each((indexTD, elementTD) => {
             if (indexTD == 0) {
-              season["name"] = $(elementTD).text();
+
+              let translatedName = '';
+              switch ($(elementTD).text()) {
+                case 'Normal':
+                  translatedName = 'Biasa';
+                  break;
+                case 'Semi Peak':
+                  translatedName = 'Separa Puncak';
+                  break;
+                case 'Peak':
+                  translatedName = 'Puncak';
+                  break;
+                case 'Super Peak':
+                  translatedName = 'Sangat Puncak';
+                  break;
+              }
+              season["name"] = 'Musim ' + translatedName;
             }
             if (!$(elementTD).attr('rowspan')) {
               for (const tableData of tableDataList) {
@@ -241,15 +272,15 @@ async function scrapeThirdSource() {
         }
 
         if (indexSpan === 22) {
-          umrahPackage['makkahHotel'] = $(elementSpan).text().replace('Makkah 5 Malam: ', '');
+          umrahPackage['makkahHotel'] = $(elementSpan).text().replace('Makkah 5 Malam: ', '').replace('.', '');
         }
 
         if (indexSpan === 25) {
-          umrahPackage['madinahHotel'] = $(elementSpan).text().replace('Madinah 5 Malam: ', '');
+          umrahPackage['madinahHotel'] = $(elementSpan).text().replace('Madinah 5 Malam: ', '').replace('.', '');
         }
 
         if (indexSpan === 13) {
-          umrahPackage['duration'] = $(elementSpan).text();
+          umrahPackage['duration'] = $(elementSpan).text().replace('.', '');
         }
       });
 
@@ -279,7 +310,7 @@ async function scrapeThirdSource() {
             break;
           case 'CS':
               seasons.push({
-                'name': 'Cuti Sekolah',
+                'name': 'Musim Cuti Sekolah',
                 'rooms': schoolHolidayRooms
               });
             break;

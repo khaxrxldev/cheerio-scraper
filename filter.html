@@ -21,11 +21,31 @@
           type: 'GET',
           url: 'http://localhost:5000/umrah'
         }).then(function(dataList) {
+          $('#filterForm').trigger("reset");
           $('#packageId').empty();
+          $('#filterRoom').find('option').remove().end().append('<option value=""></option>');
+          $('#filterSeason').find('option').remove().end().append('<option value=""></option>');
+          $('#filterDuration').find('option').remove().end().append('<option value=""></option>');
+
+          let roomListType= [];
+          let seasonListName = [];
+          let durationListName = [];
 
           for (const data of dataList.result) {
+            if(durationListName.indexOf(data.duration) === -1 && data.duration) {
+              durationListName.push(data.duration);
+            }
+
             for (const season of data.seasons) {
+              if(seasonListName.indexOf(season.name) === -1) {
+                seasonListName.push(season.name);
+              }
+
               for (const room of season.rooms) {
+                if(roomListType.indexOf(room.room_name) === -1) {
+                  roomListType.push(room.room_name);
+                }
+                
                 let status = true;
 
                 if (filterData.filterSeason && filterData.filterSeason !== season.name) {
@@ -40,6 +60,9 @@
                 if (filterData.filterEndPrice && room.room_price > filterData.filterEndPrice) {
                   status = false;
                 }
+                if (filterData.filterRoom && room.room_name !== filterData.filterRoom) {
+                  status = false;
+                }
 
                 if (status) {
                   $('#packageId').append($('<div>')
@@ -48,6 +71,27 @@
                 }
               }
             }
+          }
+
+          for (const roomType of roomListType) {
+            $('#filterRoom').append($('<option>', {
+              value: roomType,
+              text: roomType
+            }));
+          }
+
+          for (const seasonName of seasonListName) {
+            $('#filterSeason').append($('<option>', {
+              value: seasonName,
+              text: seasonName
+            }));
+          }
+
+          for (const durationName of durationListName) {
+            $('#filterDuration').append($('<option>', {
+              value: durationName,
+              text: durationName
+            }));
           }
         });
       }
@@ -58,16 +102,9 @@
     <form id="filterForm" method="post">
       <input type="number" id="filterStartPrice">
       <input type="number" id="filterEndPrice">
-      <select id="filterSeason">
-        <option value=""></option>
-        <option value="Semi Peak">Semi Peak</option>
-        <option value="Musim Puncak">Musim Puncak</option>
-      </select>
-      <select id="filterDuration">
-        <option value=""></option>
-        <option value="12 Hari 10 Malam">12 Hari 10 Malam</option>
-        <option value="11 HARI 10 MALAM">11 HARI 10 MALAM</option>
-      </select>
+      <select id="filterRoom"></select>
+      <select id="filterSeason"></select>
+      <select id="filterDuration"></select>
       <button type="submit">Filter</button>
     </form>
     <div id="packageId"></div>
@@ -78,7 +115,8 @@
           'filterStartPrice': $('#filterStartPrice').val(),
           'filterEndPrice': $('#filterEndPrice').val(),
           'filterSeason': $('#filterSeason').val(),
-          'filterDuration': $('#filterDuration').val()
+          'filterDuration': $('#filterDuration').val(),
+          'filterRoom': $('#filterRoom').val()
         };
         
         onGetData(filterData);
