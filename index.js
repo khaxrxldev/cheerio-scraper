@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
+const fs = require("fs");
 const cors = require('cors');
 const app = express();
 
@@ -324,23 +325,51 @@ async function scrapeThirdSource() {
   return umrahPackages;
 }
 
+async function scrapeDemo() {
+  let umrahPackages = [];
+  
+  await axios('').then((response) => {
+    const html_data = response.data;
+    const $ = cheerio.load(html_data);
+    $('table tr').each((index, element) => {
+      if (index > 0) {
+        umrahPackages.push({
+          "name": $(element).find("td").eq(0).text(),
+          "duration": $(element).find("td").eq(1).text(),
+          "makkahHotel": $(element).find("td").eq(2).text(),
+          "madinahHotel": $(element).find("td").eq(3).text(),
+          "room": $(element).find("td").eq(4).text(),
+          "price": $(element).find("td").eq(5).text()
+        })
+      }
+    });
+  });
+  // const $ = cheerio.load(fs.readFileSync('C:/cheerio-scraper/website.html'));
+
+  return umrahPackages;
+}
+
 app.get("/umrah", async (req, res) => {
   try {
-    const firstSourceResults = await scrapeFirstSource();
-    const secondSourceResults = await scrapeSecondSource();
-    const thirdSourceResults = await scrapeThirdSource();
-    
     let scrapeResults = [];
-    for (const firstSourceResult of firstSourceResults) {
-      scrapeResults.push(firstSourceResult);
+    // const firstSourceResults = await scrapeFirstSource();
+    // const secondSourceResults = await scrapeSecondSource();
+    // const thirdSourceResults = await scrapeThirdSource();
+    
+    // for (const firstSourceResult of firstSourceResults) {
+    //   scrapeResults.push(firstSourceResult);
+    // }
+    // for (const secondSourceResult of secondSourceResults) {
+    //   scrapeResults.push(secondSourceResult);
+    // }
+    // for (const thirdSourceResult of thirdSourceResults) {
+    //   scrapeResults.push(thirdSourceResult);
+    // }
+    const demoResults = await scrapeDemo();
+    for (const demoResult of demoResults) {
+      scrapeResults.push(demoResult);
     }
-    for (const secondSourceResult of secondSourceResults) {
-      scrapeResults.push(secondSourceResult);
-    }
-    for (const thirdSourceResult of thirdSourceResults) {
-      scrapeResults.push(thirdSourceResult);
-    }
-
+    
     return res.status(200).json({
       result: scrapeResults,
     });
